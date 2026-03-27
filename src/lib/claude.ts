@@ -316,37 +316,37 @@ ${brandContext}
 
 // ─── Step 4: Image Query Generation ───
 const STEP4_SYSTEM = `당신은 Unsplash/Pexels 스톡 이미지 검색 쿼리 전문가입니다.
-각 슬라이드의 제목과 본문을 꼼꼼히 읽고, 해당 내용과 직접적으로 관련된 이미지를 찾을 수 있는 검색 키워드를 생성하세요.
+
+[검색 엔진 특성 — 반드시 준수]
+- Unsplash/Pexels는 2-4개 영어 명사 조합에 최적화되어 있다.
+- 동사를 쓰지 말고 장면을 묘사하는 명사만 나열하라.
+- 각 쿼리에 반드시 하나의 구체적 사물이나 장면을 포함하라.
+- 좋은 예: "laptop coffee wooden desk", "woman headphones office"
+- 나쁜 예: "person working on computer" (동사 포함), "technology" (추상적 단일 단어)
 
 각 슬라이드에 대해 2개의 쿼리를 생성:
-1. primaryQuery: 슬라이드 내용을 시각적으로 직접 표현하는 구체적 장면 (3-4단어, 영어)
-2. fallbackQuery: 같은 주제의 더 넓은 범위 대체 쿼리 (2-3단어, 영어)
+1. primaryQuery: 슬라이드 내용의 핵심 명사를 조합한 구체적 장면 (2-4단어, 영어 명사만)
+2. fallbackQuery: primaryQuery와 완전히 다른 시각적 접근 (2-3단어, 영어 명사만)
+   - 단순히 단어를 줄이는 것이 아니라, 같은 개념을 다른 사물/장면으로 표현
 
-[최우선 규칙: 슬라이드 내용과 1:1 매칭]
-- 각 슬라이드의 제목이 무엇을 말하는지 정확히 파악하고, 그것을 시각화하세요.
-- "속도" 관련 → 달리는 사람, 빠른 차, 스톱워치 (추상적 "speed" 금지)
-- "비용 절감" 관련 → 동전, 지갑, 계산기 (추상적 "savings" 금지)
-- "안전" 관련 → 자물쇠, 방패, 보안 카메라 (추상적 "security" 금지)
-- "글로벌" 관련 → 세계 지도, 여러 나라 국기, 다국적 팀 (추상적 "global" 금지)
+[AIDA 단계별 이미지 톤]
+- attention: 시각적으로 강렬하고 눈길을 끄는 이미지 (대비 강한 색감, 클로즈업)
+- interest: 호기심을 유발하는 디테일 있는 장면
+- desire: 실용적이고 구체적인 장면 (도구, 작업 환경, 결과물)
+- action: 따뜻하고 긍정적인 분위기 (사람들의 교류, 성취감)
 
-[금지 사항]
-- 차트, 그래프, 통계, 다이어그램, 아이콘, 로고 금지
-- 브랜드명 금지 (Apple, Samsung 등)
-- 한국어 금지 — 영어 키워드만
-- 모든 슬라이드에 "technology" 같은 동일 키워드 반복 금지! 각 슬라이드마다 다른 시각적 접근!
+[슬라이드 내용과 1:1 매칭]
+- 각 슬라이드 제목의 핵심 명사를 추출하여 쿼리에 반영
+- "속도" → runner stopwatch track / "비용 절감" → coins calculator notebook / "안전" → padlock shield door
 
-[슬라이드별 차별화 필수]
-- 8장 슬라이드의 이미지가 모두 달라야 합니다
-- 인물(사람) 이미지와 사물 이미지를 교대로 사용
-- 매 슬라이드의 구체적 핵심 키워드를 쿼리에 반영
+[금지]
+- 차트, 그래프, 다이어그램, 아이콘, 로고
+- 한국어 — 영어 키워드만
+- 모든 슬라이드에 동일 키워드 반복 금지
 
-[패턴: 주체 + 행동 + 맥락]
-- "woman typing laptop cafe" (사람 + 행동 + 장소)
-- "hand holding smartphone close up" (신체 + 행동 + 구도)
-- "coins stacking growth chart desk" (사물 + 상태 + 장소)
-
-[마지막 CTA 슬라이드]
-- 따뜻하고 긍정적: "happy friends sharing phone together", "team celebrating success"`;
+[차별화]
+- 인물 이미지와 사물 이미지를 교대로 사용
+- 8장 슬라이드의 이미지가 모두 시각적으로 달라야 함`;
 
 
 const STEP4_SCHEMA = {
@@ -372,13 +372,22 @@ const STEP4_SCHEMA = {
 
 export async function generateImageQueries(
   slides: { title: string; body: string; cta: string }[],
+  aidaStructure?: AIDAStructure,
+  analysis?: ContentAnalysis,
 ): Promise<ImageQueries> {
   const slidesText = slides
-    .map((s, i) => `슬라이드 ${i + 1}: 제목="${s.title}" 본문="${s.body}" CTA="${s.cta}"`)
+    .map((s, i) => {
+      const aidaPhase = aidaStructure?.slideRoles.find((r) => r.slideIndex === i)?.aidaPhase || '';
+      return `슬라이드 ${i + 1} [${aidaPhase}]: 제목="${s.title}" 본문="${s.body}" CTA="${s.cta}"`;
+    })
     .join('\n');
 
-  const userMessage = `다음 슬라이드들에 어울리는 이미지 검색 키워드를 생성하세요.
+  const contextSection = analysis
+    ? `\n<context>\n감정적 톤: ${analysis.emotionalTone}\n핵심 키워드: ${analysis.keywords.join(', ')}\n타겟 오디언스: ${analysis.targetAudience}\n</context>\n`
+    : '';
 
+  const userMessage = `다음 슬라이드들에 어울리는 이미지 검색 키워드를 생성하세요.
+${contextSection}
 ${slidesText}
 
 정확히 ${slides.length}개의 쿼리를 생성하세요. slideIndex는 0부터 ${slides.length - 1}까지.`;
@@ -407,9 +416,9 @@ export async function generateCarouselMultiStep(
   onStep?.('writing');
   const slideContents = await writeSlides(structure, content, brandInfo);
 
-  // Step 4: Image Query Generation
+  // Step 4: Image Query Generation (with AIDA + analysis context)
   onStep?.('querying');
-  const imageQueries = await generateImageQueries(slideContents.slides);
+  const imageQueries = await generateImageQueries(slideContents.slides, structure, analysis);
 
   // Merge into final CarouselOutput
   const slides = slideContents.slides.map((slide, i) => {

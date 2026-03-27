@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       },
-      redirect: 'manual',
+      redirect: 'follow',
       signal: AbortSignal.timeout(10000),
     });
 

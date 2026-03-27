@@ -14,18 +14,11 @@ interface SearchResultItem {
   url: string;
   thumbnail: string;
   source: string;
+  tags: string[];
 }
 
 interface SearchResult {
   [query: string]: SearchResultItem[];
-}
-
-function simplifyQuery(query: string): string[] {
-  const words = query.trim().split(/\s+/);
-  const variants: string[] = [query];
-  if (words.length > 3) variants.push(words.slice(0, 3).join(' '));
-  if (words.length > 2) variants.push(words.slice(0, 2).join(' '));
-  return variants;
 }
 
 function toSearchResultItems(results: ImageResult[]): SearchResultItem[] {
@@ -33,6 +26,7 @@ function toSearchResultItems(results: ImageResult[]): SearchResultItem[] {
     url: img.url,
     thumbnail: img.thumbnail,
     source: img.source,
+    tags: img.tags || [],
   }));
 }
 
@@ -55,19 +49,10 @@ async function searchMultiSource(query: string): Promise<SearchResultItem[]> {
 
   if (results.length > 0) return results;
 
-  // Fallback: simplify query and retry with Unsplash only
-  const variants = simplifyQuery(query);
-  for (const variant of variants.slice(1)) {
-    const images = await searchUnsplash(variant, 5);
-    if (images.length > 0) {
-      return toSearchResultItems(images);
-    }
-  }
-
-  // Last resort: SerpAPI
+  // Fallback: SerpAPI (skip sequential simplifyQuery retries — go straight to broad search)
   const serpResults = await searchImages(query);
   if (serpResults.length > 0) {
-    return toSearchResultItems(serpResults.slice(0, 3));
+    return toSearchResultItems(serpResults);
   }
 
   return [];

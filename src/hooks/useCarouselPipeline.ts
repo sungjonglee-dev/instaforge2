@@ -1,11 +1,33 @@
 'use client';
 
 import { useCarouselStore } from './useCarouselStore';
+import type { ImageCandidate } from './useCarouselStore';
 import type { BrandInfo, CarouselPlan, PipelineStep } from '@/lib/types';
 
 interface SSEEvent {
   event: string;
   data: unknown;
+}
+
+function scoreImageRelevance(image: ImageCandidate, slideTitle: string, slideBody: string): number {
+  const imageTags = (image.tags || []).map((t) => t.toLowerCase());
+  const imageTitle = (image.source === 'article' ? '' : slideTitle).toLowerCase();
+
+  // Extract keywords from slide text (split on whitespace, filter short words)
+  const slideText = `${slideTitle} ${slideBody}`.toLowerCase();
+  const slideWords = slideText.split(/\s+/).filter((w) => w.length > 2);
+
+  if (imageTags.length === 0) return 0;
+
+  // Count keyword overlaps between slide text and image tags
+  let matches = 0;
+  for (const word of slideWords) {
+    if (imageTags.some((tag) => tag.includes(word) || word.includes(tag))) {
+      matches++;
+    }
+  }
+
+  return matches;
 }
 
 function parseSSELine(line: string): SSEEvent | null {
@@ -116,7 +138,7 @@ export function useCarouselPipeline() {
       const searchData = await searchRes.json();
 
       // Build article image candidates (from the source URL)
-      const articleCandidates: { url: string; thumbnail: string; source: string }[] =
+      const articleCandidates: ImageCandidate[] =
         state.articleImages.map((imgUrl) => ({
           url: imgUrl,
           thumbnail: imgUrl,
@@ -124,21 +146,21 @@ export function useCarouselPipeline() {
         }));
 
       if (searchData.success) {
-        const imageMap: Record<number, { url: string; thumbnail: string; source: string }[]> = {};
+        const imageMap: Record<number, ImageCandidate[]> = {};
+        const globalUsed = new Set<string>();
 
         plan.slides.forEach((slide, i) => {
-          const primaryResults = searchData.data[slide.imageQuery] || [];
-          const fallbackResults = slide.fallbackQuery
+          const primaryResults: ImageCandidate[] = searchData.data[slide.imageQuery] || [];
+          const fallbackResults: ImageCandidate[] = slide.fallbackQuery
             ? searchData.data[slide.fallbackQuery] || []
             : [];
 
           const seen = new Set<string>();
-          const merged: { url: string; thumbnail: string; source: string }[] = [];
+          const merged: ImageCandidate[] = [];
 
           const isFirstSlide = i === 0;
 
           if (isFirstSlide && articleCandidates.length > 0) {
-            // Hook slide: article image first (thumbnail of the source)
             const articleImg = articleCandidates[0];
             seen.add(articleImg.url);
             merged.push(articleImg);
@@ -152,7 +174,7 @@ export function useCarouselPipeline() {
             }
           }
 
-          // Article images as extra candidates (not auto-selected for non-first slides)
+          // Article images as extra candidates
           for (const img of articleCandidates) {
             if (!seen.has(img.url)) {
               seen.add(img.url);
@@ -160,18 +182,38 @@ export function useCarouselPipeline() {
             }
           }
 
-          imageMap[i] = merged;
+          // Sort by relevance score (article images keep position for first slide)
+          const searchOnly = isFirstSlide ? merged.slice(1) : merged;
+          searchOnly.sort(
+            (a, b) =>
+              scoreImageRelevance(b, slide.title, slide.body) -
+              scoreImageRelevance(a, slide.title, slide.body),
+          );
+          const sorted = isFirstSlide && merged.length > 0
+            ? [merged[0], ...searchOnly]
+            : searchOnly;
 
-          // Auto-assign: first slide gets article image, rest get search results
-          if (merged.length > 0) {
-            updateSlideImage(i, merged[0].url);
+          imageMap[i] = sorted;
+
+          // Auto-assign: pick best scored image not already used by another slide
+          const selected = sorted.find((img) => !globalUsed.has(img.url));
+          if (selected) {
+            globalUsed.add(selected.url);
+            updateSlideImage(i, selected.url);
+          } else if (sorted.length > 0) {
+            updateSlideImage(i, sorted[0].url);
           }
         });
 
         setImageMap(imageMap);
+
+        // Graceful degradation: if <50% of slides got an image, switch to typo
+        if (globalUsed.size < plan.slides.length * 0.5 && plan.templateId !== 'typo') {
+          setPlan({ ...plan, templateId: 'typo' });
+        }
       } else if (articleCandidates.length > 0) {
-        // Fallback: only first slide gets article image
-        const imageMap: Record<number, { url: string; thumbnail: string; source: string }[]> = {};
+        // Fallback: article images available but search failed
+        const imageMap: Record<number, ImageCandidate[]> = {};
         plan.slides.forEach((_, i) => {
           imageMap[i] = articleCandidates;
           if (i === 0) {
@@ -179,6 +221,11 @@ export function useCarouselPipeline() {
           }
         });
         setImageMap(imageMap);
+      } else {
+        // No images at all → force typo template
+        if (plan.templateId !== 'typo') {
+          setPlan({ ...plan, templateId: 'typo' });
+        }
       }
 
       // Step 6: Rendering

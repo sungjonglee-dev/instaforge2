@@ -68,7 +68,11 @@ export async function parseUrl(url: string): Promise<ParsedContent> {
   }
 
   // Find images from content area
-  const contentSelectors = ['article', 'main', '[role="main"]', '.post-content', '.entry-content', '.article-body'];
+  const contentSelectors = [
+    'article', 'main', '[role="main"]',
+    '.post-content', '.entry-content', '.article-body',
+    '.article-content', '.story-body', '[itemprop="articleBody"]', '.post-body',
+  ];
   let imgScope = 'body';
   for (const selector of contentSelectors) {
     if ($(selector).length) {
@@ -78,7 +82,24 @@ export async function parseUrl(url: string): Promise<ParsedContent> {
   }
 
   $(imgScope).find('img').each((_, el) => {
-    const src = $(el).attr('src') || $(el).attr('data-src') || '';
+    // Try srcset first for highest resolution, then src/data-src
+    let src = '';
+    const srcset = $(el).attr('srcset') || $(el).attr('data-srcset') || '';
+    if (srcset) {
+      // Parse srcset and pick the largest image
+      const candidates = srcset.split(',').map((entry) => {
+        const parts = entry.trim().split(/\s+/);
+        const candidateUrl = parts[0];
+        const descriptor = parts[1] || '0w';
+        const size = parseInt(descriptor) || 0;
+        return { url: candidateUrl, size };
+      });
+      candidates.sort((a, b) => b.size - a.size);
+      if (candidates.length > 0) src = candidates[0].url;
+    }
+    if (!src) {
+      src = $(el).attr('src') || $(el).attr('data-src') || '';
+    }
     if (!src) return;
     const resolved = resolveUrl(src, url);
     if (!resolved || seen.has(resolved)) return;

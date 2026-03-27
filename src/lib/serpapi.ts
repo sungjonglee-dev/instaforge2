@@ -5,6 +5,9 @@ export interface ImageResult {
   thumbnail: string;
   title: string;
   source: string;
+  tags: string[];
+  width?: number;
+  height?: number;
 }
 
 // ─── Unsplash ───
@@ -15,7 +18,7 @@ export async function searchUnsplash(query: string, count: number = 5): Promise<
   const params = new URLSearchParams({
     query,
     per_page: String(count),
-    orientation: 'squarish',
+    orientation: 'portrait',
     content_filter: 'high',
     order_by: 'relevant',
   });
@@ -33,6 +36,9 @@ export async function searchUnsplash(query: string, count: number = 5): Promise<
     thumbnail: (r.urls as Record<string, string>)?.thumb || '',
     title: (r.alt_description as string) || '',
     source: 'unsplash',
+    tags: ((r.tags as { title: string }[]) || []).map((t) => t.title),
+    width: (r.width as number) || undefined,
+    height: (r.height as number) || undefined,
   }));
 }
 
@@ -63,6 +69,9 @@ export async function searchPexels(query: string, count: number = 5): Promise<Im
         thumbnail: src?.medium || '',
         title: (p.alt as string) || '',
         source: 'pexels',
+        tags: (p.alt as string || '').toLowerCase().split(/\s+/).filter(Boolean),
+        width: (p.width as number) || undefined,
+        height: (p.height as number) || undefined,
       };
     });
   } catch {
@@ -98,6 +107,9 @@ export async function searchPixabay(query: string, count: number = 5): Promise<I
       thumbnail: (h.webformatURL as string) || '',
       title: (h.tags as string) || '',
       source: 'pixabay',
+      tags: ((h.tags as string) || '').split(',').map((t: string) => t.trim().toLowerCase()).filter(Boolean),
+      width: (h.imageWidth as number) || undefined,
+      height: (h.imageHeight as number) || undefined,
     }));
   } catch {
     return [];
@@ -105,16 +117,16 @@ export async function searchPixabay(query: string, count: number = 5): Promise<I
 }
 
 // ─── SerpAPI (Google Images fallback) ───
-export async function searchImages(query: string, count: number = 20): Promise<ImageResult[]> {
+export async function searchImages(query: string, count: number = 5): Promise<ImageResult[]> {
   const apiKey = process.env.SERPAPI_API_KEY;
   if (!apiKey) return [];
 
   const params = new URLSearchParams({
     engine: 'google_images',
-    q: `${query} site:pinterest.com`,
+    q: query,
     api_key: apiKey,
     num: String(count),
-    hl: 'ko',
+    imgsz: 'l',
   });
 
   try {
@@ -130,6 +142,7 @@ export async function searchImages(query: string, count: number = 20): Promise<I
       thumbnail: r.thumbnail,
       title: r.title || '',
       source: 'serpapi',
+      tags: (r.title || '').toLowerCase().split(/\s+/).filter(Boolean),
     }));
   } catch {
     return [];

@@ -1,4 +1,4 @@
-const DIRECT_DOMAINS = ['unsplash.com'];
+const DIRECT_DOMAINS = ['unsplash.com', 'images.pexels.com', 'pixabay.com'];
 
 export function getImageSrc(imageUrl: string | undefined): string | undefined {
   if (!imageUrl) return undefined;

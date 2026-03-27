@@ -5,6 +5,7 @@ export interface ImageCandidate {
   url: string;
   thumbnail: string;
   source: string;
+  tags?: string[];
 }
 
 interface CarouselState {
