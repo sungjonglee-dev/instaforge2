@@ -2,6 +2,8 @@
 
 import { BRAND_TONES, TONE_LABELS } from '@/lib/types';
 import type { BrandTone } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 
 const COLOR_PALETTES = [
   { name: '블루', main: '#2563eb', accent: '#3b82f6' },
@@ -30,27 +32,23 @@ export default function BrandSettings({
   return (
     <div className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">브랜드 톤</label>
-        <div className="flex flex-wrap gap-2">
+        <label className="block text-sm font-medium mb-1.5">브랜드 톤</label>
+        <div className="flex flex-wrap gap-1.5">
           {BRAND_TONES.map((t) => (
-            <button
+            <Badge
               key={t}
-              type="button"
+              variant={tone === t ? 'default' : 'secondary'}
+              className="cursor-pointer text-xs py-1 px-3 hover:bg-primary/80 hover:text-primary-foreground transition-colors"
               onClick={() => onToneChange(t)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                tone === t
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
             >
               {TONE_LABELS[t]}
-            </button>
+            </Badge>
           ))}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">컬러 팔레트</label>
+        <label className="block text-sm font-medium mb-1.5">컬러 팔레트</label>
         <div className="flex flex-wrap gap-2">
           {COLOR_PALETTES.map((palette) => {
             const isSelected = mainColor === palette.main && accentColor === palette.accent;
@@ -62,17 +60,17 @@ export default function BrandSettings({
                   onMainColorChange(palette.main);
                   onAccentColorChange(palette.accent);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                   isSelected
-                    ? 'ring-2 ring-offset-1 ring-blue-500 bg-gray-50'
-                    : 'bg-gray-50 hover:bg-gray-100'
+                    ? 'ring-2 ring-offset-1 ring-primary border-primary bg-accent'
+                    : 'border-border bg-card hover:bg-accent'
                 }`}
               >
                 <div className="flex gap-0.5">
-                  <div className="w-5 h-5 rounded-full" style={{ backgroundColor: palette.main }} />
-                  <div className="w-5 h-5 rounded-full" style={{ backgroundColor: palette.accent }} />
+                  <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: palette.main }} />
+                  <div className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: palette.accent }} />
                 </div>
-                <span className="text-gray-700">{palette.name}</span>
+                <span className="text-sm">{palette.name}</span>
               </button>
             );
           })}
@@ -80,8 +78,14 @@ export default function BrandSettings({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">슬라이드 수: {slideCount}장</label>
-        <input type="range" min={5} max={10} value={slideCount} onChange={(e) => onSlideCountChange(Number(e.target.value))} className="w-full" />
+        <label className="block text-sm font-medium mb-2">슬라이드 수: {slideCount}장</label>
+        <Slider
+          value={[slideCount]}
+          onValueChange={(v) => onSlideCountChange(Array.isArray(v) ? v[0] : v)}
+          min={5}
+          max={10}
+          step={1}
+        />
       </div>
     </div>
   );
