@@ -8,8 +8,14 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "InstaForge - AI Instagram Carousel Studio",
-  description: "URL 하나로 전문가급 인스타그램 캐러셀 콘텐츠를 자동 생성합니다",
+  title: "InstaForge — AI Instagram Carousel Studio",
+  description:
+    "실시간 트렌드를 기반으로 전문가급 인스타그램 캐러셀을 자동 생성합니다",
+  openGraph: {
+    title: "InstaForge — AI Instagram Carousel Studio",
+    description: "실시간 트렌드를 기반으로 전문가급 인스타그램 캐러셀을 자동 생성합니다",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -18,8 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full bg-gray-50 text-gray-900">{children}</body>
+    <html lang="ko" className={`${geist.variable} antialiased`}>
+      <body className="min-h-dvh bg-background text-foreground">
+        {children}
+      </body>
     </html>
   );
 }
