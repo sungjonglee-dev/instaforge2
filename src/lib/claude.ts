@@ -315,24 +315,39 @@ ${brandContext}
 }
 
 // ─── Step 4: Image Query Generation ───
-const STEP4_SYSTEM = `당신은 스톡 이미지 검색 쿼리 전문가입니다.
-각 슬라이드의 콘텐츠를 읽고, Unsplash/Pexels에서 검색할 구체적 영어 키워드를 생성하세요.
+const STEP4_SYSTEM = `당신은 Unsplash/Pexels 스톡 이미지 검색 쿼리 전문가입니다.
+각 슬라이드의 제목과 본문을 꼼꼼히 읽고, 해당 내용과 직접적으로 관련된 이미지를 찾을 수 있는 검색 키워드를 생성하세요.
 
 각 슬라이드에 대해 2개의 쿼리를 생성:
-1. primaryQuery: 구체적 시각 장면 (3-4단어, 영어)
-2. fallbackQuery: 더 넓은 범위의 대체 쿼리 (2-3단어, 영어)
+1. primaryQuery: 슬라이드 내용을 시각적으로 직접 표현하는 구체적 장면 (3-4단어, 영어)
+2. fallbackQuery: 같은 주제의 더 넓은 범위 대체 쿼리 (2-3단어, 영어)
 
-핵심 규칙:
-- 촬영 가능한 실제 장면만 (차트, 그래프, 통계, 아이콘 금지)
-- 추상 개념은 시각적 사물로 변환:
-  * "생산성 향상" → primaryQuery: "organized desk planner coffee", fallbackQuery: "workspace productivity"
-  * "앱 설치" → primaryQuery: "smartphone colorful app icons screen", fallbackQuery: "phone apps"
-  * "간편 결제" → primaryQuery: "hand tapping phone payment terminal", fallbackQuery: "mobile payment"
-- [주체] + [상태/행동] + [장소/맥락] 패턴 사용
+[최우선 규칙: 슬라이드 내용과 1:1 매칭]
+- 각 슬라이드의 제목이 무엇을 말하는지 정확히 파악하고, 그것을 시각화하세요.
+- "속도" 관련 → 달리는 사람, 빠른 차, 스톱워치 (추상적 "speed" 금지)
+- "비용 절감" 관련 → 동전, 지갑, 계산기 (추상적 "savings" 금지)
+- "안전" 관련 → 자물쇠, 방패, 보안 카메라 (추상적 "security" 금지)
+- "글로벌" 관련 → 세계 지도, 여러 나라 국기, 다국적 팀 (추상적 "global" 금지)
+
+[금지 사항]
+- 차트, 그래프, 통계, 다이어그램, 아이콘, 로고 금지
 - 브랜드명 금지 (Apple, Samsung 등)
 - 한국어 금지 — 영어 키워드만
-- primaryQuery와 fallbackQuery는 서로 다른 시각적 접근
-- 마지막 CTA 슬라이드는 따뜻하고 긍정적인 이미지 (예: "friends sharing phone smiling")`;
+- 모든 슬라이드에 "technology" 같은 동일 키워드 반복 금지! 각 슬라이드마다 다른 시각적 접근!
+
+[슬라이드별 차별화 필수]
+- 8장 슬라이드의 이미지가 모두 달라야 합니다
+- 인물(사람) 이미지와 사물 이미지를 교대로 사용
+- 매 슬라이드의 구체적 핵심 키워드를 쿼리에 반영
+
+[패턴: 주체 + 행동 + 맥락]
+- "woman typing laptop cafe" (사람 + 행동 + 장소)
+- "hand holding smartphone close up" (신체 + 행동 + 구도)
+- "coins stacking growth chart desk" (사물 + 상태 + 장소)
+
+[마지막 CTA 슬라이드]
+- 따뜻하고 긍정적: "happy friends sharing phone together", "team celebrating success"`;
+
 
 const STEP4_SCHEMA = {
   type: 'object',

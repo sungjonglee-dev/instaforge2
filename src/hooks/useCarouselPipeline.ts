@@ -132,17 +132,19 @@ export function useCarouselPipeline() {
             ? searchData.data[slide.fallbackQuery] || []
             : [];
 
-          // Merge: article images first, then primary + fallback, dedup by URL
           const seen = new Set<string>();
           const merged: { url: string; thumbnail: string; source: string }[] = [];
 
-          // Article images get priority — distribute across slides
-          const articleImg = articleCandidates[i % articleCandidates.length];
-          if (articleImg && !seen.has(articleImg.url)) {
+          const isFirstSlide = i === 0;
+
+          if (isFirstSlide && articleCandidates.length > 0) {
+            // Hook slide: article image first (thumbnail of the source)
+            const articleImg = articleCandidates[0];
             seen.add(articleImg.url);
             merged.push(articleImg);
           }
 
+          // Search results: primary + fallback
           for (const img of [...primaryResults, ...fallbackResults]) {
             if (!seen.has(img.url)) {
               seen.add(img.url);
@@ -150,7 +152,7 @@ export function useCarouselPipeline() {
             }
           }
 
-          // Add remaining article images as extra candidates
+          // Article images as extra candidates (not auto-selected for non-first slides)
           for (const img of articleCandidates) {
             if (!seen.has(img.url)) {
               seen.add(img.url);
@@ -160,7 +162,7 @@ export function useCarouselPipeline() {
 
           imageMap[i] = merged;
 
-          // Auto-assign first image (article image if available)
+          // Auto-assign: first slide gets article image, rest get search results
           if (merged.length > 0) {
             updateSlideImage(i, merged[0].url);
           }
@@ -168,11 +170,13 @@ export function useCarouselPipeline() {
 
         setImageMap(imageMap);
       } else if (articleCandidates.length > 0) {
-        // Even if search fails, use article images
+        // Fallback: only first slide gets article image
         const imageMap: Record<number, { url: string; thumbnail: string; source: string }[]> = {};
         plan.slides.forEach((_, i) => {
           imageMap[i] = articleCandidates;
-          updateSlideImage(i, articleCandidates[i % articleCandidates.length].url);
+          if (i === 0) {
+            updateSlideImage(i, articleCandidates[0].url);
+          }
         });
         setImageMap(imageMap);
       }
