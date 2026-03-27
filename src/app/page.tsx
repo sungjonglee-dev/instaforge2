@@ -21,8 +21,6 @@ export default function Home() {
   const [selectedNewsUrl, setSelectedNewsUrl] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [tone, setTone] = useState<BrandTone>("friendly");
-  const [mainColor, setMainColor] = useState("#2563eb");
-  const [accentColor, setAccentColor] = useState("#3b82f6");
   const [slideCount, setSlideCount] = useState(8);
   const [activeTab, setActiveTab] = useState("discover");
 
@@ -41,8 +39,6 @@ export default function Home() {
     if (isGenerating || !targetUrl.trim()) return;
     const info = {
       tone,
-      mainColor,
-      accentColor,
       styleKeywords: [] as string[],
     };
     setBrandInfo(info);
@@ -65,12 +61,14 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-dvh flex flex-col">
+    <main className="min-h-dvh flex flex-col pb-10">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <h1 className="text-lg font-bold tracking-tight">InstaForge</h1>
-          <span className="text-xs text-muted-foreground">AI Carousel Studio</span>
+          <span className="text-xs text-muted-foreground">
+            AI Carousel Studio
+          </span>
         </div>
       </header>
 
@@ -81,10 +79,11 @@ export default function Home() {
           {!isGenerating && step !== "error" && (
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold tracking-tight mb-2">
-                트렌드로 만드는 캐러셀
+                트렌드로 만드는 인스타 피드
               </h2>
               <p className="text-muted-foreground">
-                실시간 트렌드를 선택하면 전문가급 인스타 캐러셀을 자동으로 생성해요
+                실시간 트렌드를 선택하면 전문가급 인스타 피드 이미지들을
+                자동으로 생성해요
               </p>
             </div>
           )}
@@ -96,7 +95,9 @@ export default function Home() {
           {step === "error" && errorMessage && (
             <Card className="mb-6 border-destructive/50 bg-destructive/5">
               <CardContent className="pt-4 pb-3">
-                <p className="text-sm text-destructive font-medium mb-1">생성에 실패했습니다</p>
+                <p className="text-sm text-destructive font-medium mb-1">
+                  생성에 실패했습니다
+                </p>
                 <p className="text-sm text-destructive/80">{errorMessage}</p>
                 <Button
                   variant="outline"
@@ -155,7 +156,8 @@ export default function Home() {
                       required={activeTab === "url"}
                     />
                     <p className="text-xs text-muted-foreground mt-2">
-                      블로그, 뉴스 기사, 기술 문서 등의 URL을 입력하면 해당 콘텐츠를 분석하여 캐러셀을 생성합니다.
+                      블로그, 뉴스 기사, 기술 문서 등의 URL을 입력하면 해당
+                      콘텐츠를 분석하여 캐러셀을 생성합니다.
                     </p>
                   </div>
                 </TabsContent>
@@ -163,12 +165,8 @@ export default function Home() {
 
               <BrandSettings
                 tone={tone}
-                mainColor={mainColor}
-                accentColor={accentColor}
                 slideCount={slideCount}
                 onToneChange={setTone}
-                onMainColorChange={setMainColor}
-                onAccentColorChange={setAccentColor}
                 onSlideCountChange={setSlideCount}
               />
 

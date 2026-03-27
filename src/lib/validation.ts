@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 export const brandInfoSchema = z.object({
   tone: z.enum(['professional', 'friendly', 'emotional', 'humorous', 'serious']).optional(),
-  mainColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, '유효한 hex 컬러를 입력하세요').optional(),
-  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   styleKeywords: z.array(z.string().max(30)).max(5).optional(),
 }).optional();
 

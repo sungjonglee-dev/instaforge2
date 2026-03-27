@@ -28,8 +28,8 @@ export type PipelineStep =
 
 export interface BrandInfo {
   tone: BrandTone;
-  mainColor: string;
-  accentColor: string;
+  mainColor?: string;
+  accentColor?: string;
   styleKeywords: string[];
 }
 

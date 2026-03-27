@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import type { TrendItem, NewsItem } from '@/lib/sources';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import type { TrendItem, NewsItem } from "@/lib/sources";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface DiscoverPanelProps {
   onSelectUrl: (url: string) => void;
@@ -38,7 +38,10 @@ function NewsSkeleton() {
   );
 }
 
-export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPanelProps) {
+export default function DiscoverPanel({
+  onSelectUrl,
+  selectedUrl,
+}: DiscoverPanelProps) {
   const [trends, setTrends] = useState<TrendItem[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [selectedTrend, setSelectedTrend] = useState<string | null>(null);
@@ -46,7 +49,7 @@ export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPane
   const [loadingNews, setLoadingNews] = useState(false);
 
   useEffect(() => {
-    fetch('/api/sources/trends?geo=KR')
+    fetch("/api/sources/trends?geo=KR")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setTrends(data.data);
@@ -61,7 +64,9 @@ export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPane
       return;
     }
     setLoadingNews(true);
-    fetch(`/api/sources/news?query=${encodeURIComponent(selectedTrend)}&count=5`)
+    fetch(
+      `/api/sources/news?query=${encodeURIComponent(selectedTrend)}&count=5`,
+    )
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setNews(data.data);
@@ -71,7 +76,7 @@ export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPane
   }, [selectedTrend]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4">
       {/* Trending Topics */}
       <div>
         <label className="block text-sm font-medium mb-2">오늘의 트렌드</label>
@@ -82,11 +87,13 @@ export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPane
             트렌드를 가져올 수 없습니다.
           </p>
         ) : (
-          <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+          <div className="flex flex-wrap gap-1.5">
             {trends.slice(0, 15).map((trend) => (
               <Badge
                 key={trend.query}
-                variant={selectedTrend === trend.query ? 'default' : 'secondary'}
+                variant={
+                  selectedTrend === trend.query ? "default" : "secondary"
+                }
                 className="cursor-pointer text-xs py-1 px-2.5 hover:bg-primary/80 hover:text-primary-foreground transition-colors"
                 onClick={() => setSelectedTrend(trend.query)}
               >
@@ -105,7 +112,7 @@ export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPane
       </div>
 
       {/* News articles — always reserve space */}
-      <div className="min-h-[180px]">
+      <div className="min-h-[220px] max-h-[220px] overflow-y-auto pt-2">
         {!selectedTrend ? (
           <div className="flex items-center justify-center h-[180px] border border-dashed rounded-lg">
             <p className="text-sm text-muted-foreground">
@@ -133,32 +140,45 @@ export default function DiscoverPanel({ onSelectUrl, selectedUrl }: DiscoverPane
             <label className="block text-sm font-medium mb-2">
               &quot;{selectedTrend}&quot; 관련 뉴스
             </label>
-            <div className="space-y-2 max-h-[220px] overflow-y-auto">
-              {news.map((item, i) => {
-                const itemUrl = item.originalLink || item.link;
-                const isSelected = selectedUrl === itemUrl;
-                return (
-                  <Card
-                    key={i}
-                    className={`cursor-pointer transition-all ${
-                      isSelected ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'
-                    }`}
-                    onClick={() => onSelectUrl(itemUrl)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium leading-snug line-clamp-1">{item.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{item.description}</p>
+            <div className="space-y-2 py-2 overflow-y-auto px-2">
+              {news
+                .filter((item) => item?.title && item?.link)
+                .map((item, i) => {
+                  const itemUrl = item.originalLink || item.link;
+                  const isSelected = selectedUrl === itemUrl;
+                  return (
+                    <Card
+                      key={i}
+                      className={`cursor-pointer transition-all ${
+                        isSelected
+                          ? "ring-2 ring-primary border-primary"
+                          : "hover:border-primary/50"
+                      }`}
+                      onClick={() => onSelectUrl(itemUrl)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium leading-snug line-clamp-1">
+                              {item.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {item.description}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <Badge
+                              variant="default"
+                              className="shrink-0 text-[10px]"
+                            >
+                              선택됨
+                            </Badge>
+                          )}
                         </div>
-                        {isSelected && (
-                          <Badge variant="default" className="shrink-0 text-[10px]">선택됨</Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           </>
         )}
